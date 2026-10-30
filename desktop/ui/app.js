@@ -64,7 +64,7 @@ $('go').onclick = async () => {
   try {
     const r = await api.start(de, para);
     $('barfill').style.width = '100%'; $('pct').textContent = '100%'; $('stage').textContent = T.stDone;
-    $('result').hidden = false; $('vid').src = fileUrl(r.file);
+    $('result').hidden = false; $('vid').src = fileUrl(r.file); $('result').scrollIntoView();
     if (S.openWhenDone) $('vid').play().catch(() => {});
     $('rtitle').textContent = `${r.de} → ${r.para}`;
     $('rinfo').textContent = `${r.km.toFixed(2)} km · ${r.duration.toFixed(1)} s · ${T.gen} ${fmtS(r.seconds)}`;

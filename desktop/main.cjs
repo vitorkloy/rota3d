@@ -4,6 +4,8 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 const W = 1080, H = 1920;
+// permite WebGL por software quando não há GPU (VMs, alguns notebooks)
+app.commandLine.appendSwitch('enable-unsafe-swiftshader');
 const store = (name, def) => {
   const f = path.join(app.getPath('userData'), name + '.json');
   return {
@@ -62,6 +64,28 @@ function createWindow() {
   win.setMenuBarVisibility(false);
   win.loadFile(path.join(__dirname, 'ui', 'index.html'));
   win.once('ready-to-show', () => win.show());
+  if (process.env.ROTA3D_SCREENSHOTS) win.webContents.once('did-finish-load', () => screenshotTour(process.env.ROTA3D_SCREENSHOTS));
+}
+
+/** Modo de desenvolvimento: percorre as telas e salva PNGs (usado para documentação/CI). */
+async function screenshotTour(dir) {
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const js = (c) => win.webContents.executeJavaScript(c);
+  const shot = async (n) => { await wait(600); fs.writeFileSync(path.join(dir, `ui-${n}.png`), (await win.webContents.capturePage()).toPNG()); };
+  fs.mkdirSync(dir, { recursive: true });
+  await wait(800);
+  await shot('gerar');
+  if (process.env.ROTA3D_DE) {
+    await js(`document.getElementById('de').value=${JSON.stringify(process.env.ROTA3D_DE)};document.getElementById('para').value=${JSON.stringify(process.env.ROTA3D_PARA)};document.getElementById('go').click()`);
+    while (!(await js("document.getElementById('pct').textContent.startsWith('4')||!document.getElementById('result').hidden||!!document.querySelector('#stage .err')"))) await wait(500);
+    await shot('progresso');
+    while (!(await js("!document.getElementById('result').hidden||!!document.querySelector('#stage .err')"))) await wait(1000);
+    await js("document.getElementById('vid').pause();document.getElementById('vid').currentTime=6;document.getElementById('result').scrollIntoView()");
+    await shot('resultado');
+  }
+  await js("document.querySelector('[data-view=historico]').click()"); await shot('historico');
+  await js("document.querySelector('[data-view=definicoes]').click()"); await shot('definicoes');
+  app.quit();
 }
 
 app.whenReady().then(() => {
@@ -85,7 +109,7 @@ ipcMain.handle('job:start', async (e, { de, para }) => {
   if (current) throw new Error('Já existe um vídeo sendo gerado.');
   const s = settings.get();
   fs.mkdirSync(s.outDir, { recursive: true });
-  const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
+  const now = new Date(), stamp = new Date(now - now.getTimezoneOffset() * 60000).toISOString().replace(/[:T]/g, '-').slice(0, 19);
   const out = path.join(s.outDir, `rota3d-${stamp}.mp4`);
   const send = (ch, v) => !e.sender.isDestroyed() && e.sender.send(ch, v);
   current = new AbortController();
