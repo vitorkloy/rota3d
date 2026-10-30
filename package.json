@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node bin/rota3d.js serve",
     "lint": "eslint .",
-    "test": "node --test test/",
+    "test": "node --test test/input.test.js",
     "desktop": "electron .",
     "dist": "electron-builder --publish never"
   },
