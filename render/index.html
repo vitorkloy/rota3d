@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#eef0f2;font-family:Inter,'Helvetica Neue',Arial,sans-serif}
+.big{max-width:900px;white-space:normal;text-align:center;line-height:1.1;font-size:60px!important;font-weight:700!important;color:#2f343b!important}
+.lb{position:absolute;color:#4a4f57;font-size:40px;font-weight:600;transform:translate(-50%,-50%);white-space:nowrap;letter-spacing:.2px;text-shadow:0 0 6px rgba(255,255,255,.9)}
+.credit{position:absolute;right:28px;bottom:24px;font-size:24px;color:#5b616a;background:rgba(255,255,255,.75);padding:6px 12px;border-radius:8px}
+.lb.dest{opacity:0}</style>
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js"}}</script></head><body>
+<div class="credit">© OpenStreetMap contributors</div>
+<script type="module">
+import * as THREE from 'three';
+import {mergeGeometries} from '/render/BufferGeometryUtils.js';
+const S=await (await fetch('/scene.json')).json();
+const W=1080,H=1920;
+const ren=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+ren.setSize(W,H);ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;
+ren.toneMapping=THREE.NoToneMapping;document.body.appendChild(ren.domElement);
+const sc=new THREE.Scene();sc.background=new THREE.Color(0xeef0f2);
+sc.fog=new THREE.Fog(0xeef0f2,700,1300);
+const cam=new THREE.PerspectiveCamera(30,W/H,10,4000);
+sc.add(new THREE.HemisphereLight(0xffffff,0xb8bcc4,1.35));
+const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.castShadow=true;
+sun.shadow.mapSize.set(4096,4096);const sc2=sun.shadow.camera;sc2.left=-650;sc2.right=650;sc2.top=650;sc2.bottom=-650;sc2.near=1;sc2.far=2000;
+sun.shadow.bias=-0.0006;sun.shadow.radius=4;sc.add(sun);sc.add(sun.target);
+// ground
+const gr=new THREE.Mesh(new THREE.PlaneGeometry(8000,8000),new THREE.MeshLambertMaterial({color:0xe2e4e8}));
+gr.rotation.x=-Math.PI/2;gr.receiveShadow=true;sc.add(gr);
+function ribbon(pts,w,y){const g=[];for(let i=0;i<pts.length-1;i++){const[a,b]=[pts[i],pts[i+1]];const dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);if(L<.01)continue;
+ const p=new THREE.PlaneGeometry(L,w);p.rotateX(-Math.PI/2);p.rotateY(-Math.atan2(dz,dx));p.translate((a[0]+b[0])/2,y,(a[1]+b[1])/2);g.push(p)}
+ for(const a of pts){const c=new THREE.CircleGeometry(w/2,16);c.rotateX(-Math.PI/2);c.translate(a[0],y,a[1]);g.push(c)}return g}
+const rg=[],mg=[];for(const r of S.r)(r.m?mg:rg).push(...ribbon(r.p,r.w,0.05));
+const mk=(gs,c,y)=>{if(!gs.length)return;const m=new THREE.Mesh(mergeGeometries(gs.map(g=>g.toNonIndexed().deleteAttribute('uv')&&g.toNonIndexed())),new THREE.MeshLambertMaterial({color:c}));m.receiveShadow=true;m.position.y=y;sc.add(m)};
+function merge(gs){return mergeGeometries(gs.map(g=>{g=g.index?g.toNonIndexed():g;for(const k of Object.keys(g.attributes))if(k!='position'&&k!='normal')g.deleteAttribute(k);return g}))}
+const addM=(gs,c,y=0,cast=false)=>{if(!gs.length)return;const m=new THREE.Mesh(merge(gs),new THREE.MeshLambertMaterial({color:c}));m.position.y=y;m.receiveShadow=true;m.castShadow=cast;sc.add(m);return m};
+addM(rg,0xfbfbfc);addM(mg,0xf6efd6,0.02);
+// green / water
+const shp=p=>new THREE.Shape(p.map(q=>new THREE.Vector2(q[0],-q[1])));
+const wat=[],grn=[];for(const g of S.g){if(g.p.length<3)continue;const s=new THREE.ShapeGeometry(shp(g.p));s.rotateX(-Math.PI/2);(g.t=='w'?wat:grn).push(s)}
+addM(wat,0xbcdcf2,0.1);addM(grn,0xd3e8c8,0.08);
+// trees as green blobs in parks
+const tg=[];let seed=7;const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+for(const g of S.g){if(g.t!='g'||g.p.length<3)continue;let xs=g.p.map(p=>p[0]),zs=g.p.map(p=>p[1]);const x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs);
+ const n=Math.min(40,((x1-x0)*(z1-z0))/250|0);for(let i=0;i<n;i++){const x=x0+rnd()*(x1-x0),z=z0+rnd()*(z1-z0);if(!inside([x,z],g.p))continue;const r=3+rnd()*2.5;const c=new THREE.CapsuleGeometry(r,r*0.6,6,12);c.translate(x,r*1.3,z);tg.push(c)}}
+function inside(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>p[1])!=(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
+addM(tg,0x8cc97a,0,true);
+// buildings
+const bg=[];for(const b of S.b){if(b.p.length<3)continue;const e=new THREE.ExtrudeGeometry(shp(b.p),{depth:b.h,bevelEnabled:false});e.rotateX(-Math.PI/2);bg.push(e)}
+if(bg.length){const bm=new THREE.Mesh(merge(bg),new THREE.MeshLambertMaterial({color:0xf7f7f8}));bm.castShadow=true;bm.receiveShadow=true;sc.add(bm);}
+// route
+const R=S.route;const cum=[0];for(let i=1;i<R.length;i++)cum.push(cum[i-1]+Math.hypot(R[i][0]-R[i-1][0],R[i][1]-R[i-1][1]));const TOT=cum.at(-1);
+function at(d){d=Math.max(0,Math.min(TOT,d));let i=1;while(i<R.length-1&&cum[i]<d)i++;const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);return[R[i-1][0]+(R[i][0]-R[i-1][0])*t,R[i-1][1]+(R[i][1]-R[i-1][1])*t]}
+const rmat=new THREE.MeshBasicMaterial({color:0x1e7bf0,depthTest:false,depthWrite:false});
+let rmesh=null;function drawRoute(d){if(rmesh){sc.remove(rmesh);rmesh.geometry.dispose()}const pts=[];for(let i=0;i<R.length&&cum[i]<d;i++)pts.push(R[i]);pts.push(at(d));if(pts.length<2)return;rmesh=new THREE.Mesh(merge(ribbon(pts,11,0)),rmat);rmesh.position.y=0.6;rmesh.renderOrder=10;sc.add(rmesh)}
+function marker(p){const g=new THREE.Group();const halo=new THREE.Mesh(new THREE.CircleGeometry(1,48),new THREE.MeshBasicMaterial({color:0x5aa4ff,transparent:true,opacity:.3,depthWrite:false,depthTest:false}));
+ const w=new THREE.Mesh(new THREE.CircleGeometry(12,48),new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false}));const b=new THREE.Mesh(new THREE.CircleGeometry(8.5,48),new THREE.MeshBasicMaterial({color:0x1e7bf0,depthTest:false}));
+ for(const [m,y,o] of [[halo,.8,11],[w,1,12],[b,1.1,13]]){m.renderOrder=o;m.rotation.x=-Math.PI/2;m.position.y=y;g.add(m)}g.position.set(p[0],0.5,p[1]);g.userData.halo=halo;sc.add(g);return g}
+const m0=marker(R[0]),m1=marker(R.at(-1));m1.visible=false;
+const allL=[...S.l.map(l=>({...l})),{n:S.from,p:S.route[0],big:true,k:'from'},{n:S.to,p:S.route.at(-1),big:true,k:'to'}];
+const labs=allL.map(l=>{const d=document.createElement('div');d.className='lb';d.textContent=l.n;if(l.big)d.classList.add('big');if(l.k=='to')d.classList.add('dest');document.body.appendChild(d);return {...l,d}});
+const PITCH=50*Math.PI/180,DIST=640;
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const FPS=30,T0=45,T1=T0+S.drawFrames,N=T1+45;
+window.N=N;
+let sm=null;
+window.renderFrame=f=>{const t=f/FPS;const u=ease(Math.min(1,Math.max(0,(f-T0)/(T1-T0))));const d=u*TOT;drawRoute(d);
+ // camera target: lookahead point, smoothed deterministic via averaging samples
+ let tx=0,tz=0,k=0;for(let s=-8;s<=8;s++){const p=at(d+s*25);tx+=p[0];tz+=p[1];k++}tx/=k;tz/=k;
+ cam.position.set(tx,DIST*Math.sin(PITCH),tz+DIST*Math.cos(PITCH));cam.lookAt(tx,0,tz);
+ sun.position.set(tx-380,520,tz+180);sun.target.position.set(tx,0,tz);
+ const pulse=(ph)=>{const q=(ph%1);return [12+q*30,0.45*(1-q)]};
+ let [r,o]=pulse(t/1.3);m0.userData.halo.scale.setScalar(r);m0.userData.halo.material.opacity=o;
+ m1.visible=f>=T1;if(m1.visible){const sp=Math.min(1,(f-T1)/8);m1.scale.setScalar(.3+.7*(1-Math.pow(1-sp,3))+0.15*Math.sin(Math.min(1,sp)*Math.PI));[r,o]=pulse((f-T1)/FPS/1.0);m1.userData.halo.scale.setScalar(r);m1.userData.halo.material.opacity=o}
+ const head=at(d);
+ for(const l of labs){const v=new THREE.Vector3(l.p[0],14,l.p[1]).project(cam);const x=(v.x+1)/2*W,y=(1-v.y)/2*H;l.d.style.left=x+'px';l.d.style.top=(y-(l.big?95:0))+'px';
+  const dd=Math.hypot(l.p[0]-head[0],l.p[1]-head[1]);let op=Math.max(0,Math.min(1,(1-(Math.abs(y-H/2)-700)/200)));if(l.k=='to')op*=Math.min(1,Math.max(0,(f-T1+6)/8));l.d.style.opacity=op;}
+ ren.render(sc,cam);};
+window.renderFrame(0);window.ready=true;
+</script></body></html>
