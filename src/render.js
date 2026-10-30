@@ -46,8 +46,9 @@ function startServer(scene) {
     if (u === '/scene.json') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(json); }
     let f;
     if (u === '/') f = path.join(ROOT, 'render', 'index.html');
+    else if (u === '/render/BufferGeometryUtils.js') f = path.join(ROOT, 'render', 'BufferGeometryUtils.js');
     else if (u.startsWith('/three/')) f = path.join(THREE_DIR, path.normalize(u.slice(7)).replace(/^(\.\.[/\\])+/, ''));
-    if (!f || !f.startsWith(u === '/' ? ROOT : THREE_DIR) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
+    if (!f || !(f.startsWith(ROOT) || f.startsWith(THREE_DIR)) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
     res.writeHead(200, { 'Content-Type': f.endsWith('.js') ? 'text/javascript' : 'text/html' });
     res.end(fs.readFileSync(f));
   });
@@ -64,7 +65,7 @@ export async function puppeteerBackend(url, log) {
   const failed = new Promise((_, rej) => page.on('pageerror', (e) => { pageErr = e; rej(new Error('erro na cena 3D: ' + e.message)); }));
   failed.catch(() => {});
   await page.goto(url);
-  await Promise.race([page.waitForFunction('window.ready', { timeout: 600000 }), failed]);
+  await Promise.race([page.waitForFunction('window.ready', { timeout: 180000 }), failed]);
   if (pageErr) throw pageErr;
   return {
     frames: () => page.evaluate('window.N'),

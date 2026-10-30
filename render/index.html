@@ -7,7 +7,7 @@
 <div class="credit">© OpenStreetMap contributors</div>
 <script type="module">
 import * as THREE from 'three';
-import {mergeGeometries} from '/three/examples/jsm/utils/BufferGeometryUtils.js';
+import {mergeGeometries} from '/render/BufferGeometryUtils.js';
 const S=await (await fetch('/scene.json')).json();
 const W=1080,H=1920;
 const ren=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});

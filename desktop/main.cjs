@@ -43,7 +43,7 @@ function electronBackend(url) {
           });
         }
       } catch { /* página ainda carregando */ }
-      if (Date.now() - t0 > 600000) { w.destroy(); return reject(new Error('tempo esgotado preparando a cena')); }
+      if (Date.now() - t0 > 180000) { w.destroy(); return reject(new Error('tempo esgotado preparando a cena')); }
       setTimeout(poll, 300);
     };
     w.webContents.once('dom-ready', () => {
