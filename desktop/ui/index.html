@@ -1,0 +1,54 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; media-src 'self' file:; style-src 'self' 'unsafe-inline'">
+<title>rota3d</title><link rel="stylesheet" href="style.css"></head><body>
+<div class="titlebar"></div>
+<aside>
+  <div class="brand" data-i18n="appTitle">rota3d</div>
+  <nav>
+    <button data-view="gerar" class="active"><svg viewBox="0 0 24 24"><path d="M3 17c4 0 4-10 9-10s5 10 9 10"/><circle cx="3" cy="17" r="1.6"/><circle cx="21" cy="17" r="1.6"/></svg><span data-i18n="navGenerate"></span></button>
+    <button data-view="historico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-i18n="navHistory"></span></button>
+    <button data-view="definicoes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="navSettings"></span></button>
+  </nav>
+  <div class="foot"><span>rota3d</span><span id="ver"></span></div>
+</aside>
+<main>
+<section id="gerar" class="view active">
+  <h1 data-i18n="genTitle"></h1><p class="sub" data-i18n="genSub"></p>
+  <div class="group" data-i18n="route"></div>
+  <div class="row col"><label for="de" data-i18n="origin"></label><input id="de" data-i18n-ph="ph"></div>
+  <div class="row col"><label for="para" data-i18n="dest"></label><input id="para" data-i18n-ph="ph"></div>
+  <div class="actions"><button id="go" class="primary" data-i18n="generate"></button><button id="cancel" class="ghost" hidden data-i18n="cancel"></button></div>
+  <div id="job" hidden>
+    <div class="group" data-i18n="progress"></div>
+    <div class="bar"><i id="barfill"></i></div>
+    <div class="status"><span id="stage"></span><span id="pct"></span></div>
+    <pre id="log"></pre>
+  </div>
+  <div id="result" hidden>
+    <div class="group" data-i18n="result"></div>
+    <div class="preview"><video id="vid" controls loop></video>
+      <div class="meta"><div id="rtitle" class="rtitle"></div><div id="rinfo" class="desc"></div>
+      <div class="actions"><button id="openFolder" class="ghost" data-i18n="openFolder"></button><button id="openVideo" class="ghost" data-i18n="openVideo"></button></div></div>
+    </div>
+  </div>
+</section>
+<section id="historico" class="view">
+  <h1 data-i18n="histTitle"></h1><p class="sub" data-i18n="histSub"></p>
+  <div id="hist"></div>
+</section>
+<section id="definicoes" class="view">
+  <h1 data-i18n="setTitle"></h1><p class="sub" data-i18n="setSub"></p>
+  <div class="group" data-i18n="language"></div>
+  <div class="row"><div><div class="label" data-i18n="language"></div><div class="desc" data-i18n="languageDesc"></div></div>
+    <div class="seg" id="lang"><button data-v="pt-BR">Português (Brasil)</button><button data-v="en">English</button></div></div>
+  <div class="group" data-i18n="output"></div>
+  <div class="row"><div><div class="label" data-i18n="outDir"></div><div class="desc mono" id="outDir"></div></div><button id="pick" class="ghost" data-i18n="change"></button></div>
+  <div class="row"><div><div class="label" data-i18n="openWhenDone"></div><div class="desc" data-i18n="openWhenDoneDesc"></div></div><button class="toggle" id="openWhenDone" role="switch"></button></div>
+  <div class="group" data-i18n="animation"></div>
+  <div class="row"><div><div class="label" data-i18n="speed"></div><div class="desc" data-i18n="speedDesc"></div></div>
+    <div class="seg" id="speed"><button data-v="2.4" data-i18n="fast"></button><button data-v="3.4" data-i18n="standard"></button><button data-v="4.4" data-i18n="slow"></button></div></div>
+  <div class="row"><div><div class="label" data-i18n="format"></div><div class="desc" data-i18n="formatDesc"></div></div><span class="chip">1080×1920 · 30 fps</span></div>
+  <p class="credit">© OpenStreetMap contributors · ODbL · OSRM · Nominatim</p>
+</section>
+</main>
+<script src="i18n.js"></script><script src="app.js"></script></body></html>

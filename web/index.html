@@ -1,0 +1,31 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>rota3d</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:560px;margin:48px auto;padding:0 16px;color:#222;background:#f4f5f7}
+h1{font-size:28px;margin-bottom:4px}p.sub{color:#666;margin-top:0}
+label{display:block;font-weight:600;margin:16px 0 6px}
+input{width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1px solid #ccd;border-radius:8px}
+button{margin-top:20px;padding:12px 20px;font-size:16px;border:0;border-radius:8px;background:#1e7bf0;color:#fff;cursor:pointer}
+button:disabled{opacity:.5}
+progress{width:100%;height:14px;margin-top:20px}
+pre{background:#fff;border:1px solid #dde;border-radius:8px;padding:10px;font-size:12px;white-space:pre-wrap;max-height:220px;overflow:auto}
+.err{color:#b00020;font-weight:600}a.dl{display:inline-block;margin-top:16px;font-weight:600;color:#1e7bf0}
+footer{margin-top:40px;font-size:12px;color:#888}
+</style></head><body>
+<h1>rota3d</h1><p class="sub">Vídeo vertical 3D da rota, estilo maquete branca.</p>
+<form id="f">
+<label for="de">Origem</label><input id="de" required placeholder="endereço, link do Google Maps ou -23.56,-46.65">
+<label for="para">Destino</label><input id="para" required placeholder="endereço, link do Google Maps ou lat,lng">
+<button id="b">Gerar vídeo</button></form>
+<div id="st" hidden><progress id="pg" max="1" value="0"></progress><div id="msg"></div><pre id="log"></pre></div>
+<footer>Dados © OpenStreetMap contributors (ODbL). Rotas: OSRM. Geocodificação: Nominatim.</footer>
+<script>
+const $=id=>document.getElementById(id);
+$('f').onsubmit=async e=>{e.preventDefault();$('b').disabled=true;$('st').hidden=false;$('msg').textContent='enviando…';$('pg').removeAttribute('value');
+ const r=await fetch('/api/jobs',{method:'POST',body:JSON.stringify({de:$('de').value,para:$('para').value})});const j=await r.json();
+ if(!r.ok){$('msg').innerHTML='<span class="err">'+j.error+'</span>';$('b').disabled=false;return}
+ const t=setInterval(async()=>{const s=await (await fetch('/api/jobs/'+j.id)).json();$('log').textContent=s.log.join('\n');$('log').scrollTop=1e9;
+  if(s.total){$('pg').value=s.frame/s.total;$('msg').textContent=`${s.status}: ${s.frame}/${s.total} quadros`}else $('msg').textContent=s.status+'…';
+  if(s.status=='pronto'){clearInterval(t);$('pg').value=1;$('msg').innerHTML='<a class="dl" href="/api/jobs/'+j.id+'/video" download>⬇ Baixar MP4</a>';$('b').disabled=false;location.href='/api/jobs/'+j.id+'/video'}
+  if(s.status=='erro'){clearInterval(t);$('msg').innerHTML='<span class="err">Erro: '+s.error+'</span>';$('b').disabled=false}},1000)};
+</script></body></html>

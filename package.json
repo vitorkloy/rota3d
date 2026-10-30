@@ -1,0 +1,96 @@
+{
+  "name": "rota3d",
+  "version": "0.1.0",
+  "description": "Gera vídeo vertical 3D (maquete branca) de uma rota entre dois pontos, com dados do OpenStreetMap",
+  "scripts": {
+    "start": "node bin/rota3d.js serve",
+    "lint": "eslint .",
+    "test": "node --test test/",
+    "desktop": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "keywords": [
+    "openstreetmap",
+    "three.js",
+    "video",
+    "map",
+    "route"
+  ],
+  "author": "Vitor de Oliveira",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "puppeteer": "^24.43.1",
+    "three": "^0.187.0"
+  },
+  "bin": {
+    "rota3d": "bin/rota3d.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "src",
+    "render",
+    "web",
+    "desktop"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitorkloy/rota3d.git"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.18.0",
+    "eslint": "^10.14.0",
+    "globals": "^17.13.0"
+  },
+  "main": "desktop/main.cjs",
+  "build": {
+    "appId": "io.github.vitorkloy.rota3d",
+    "productName": "rota3d",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "bin/**",
+      "src/**",
+      "render/**",
+      "web/**",
+      "desktop/**",
+      "package.json",
+      "!node_modules/puppeteer/**",
+      "!node_modules/puppeteer-core/**",
+      "!node_modules/chromium-bidi/**",
+      "!node_modules/devtools-protocol/**"
+    ],
+    "asarUnpack": [
+      "node_modules/@ffmpeg-installer/**"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "rota3d-${version}-portable.exe"
+    },
+    "mac": {
+      "target": [
+        "zip"
+      ],
+      "category": "public.app-category.video",
+      "identity": null
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Video"
+    },
+    "artifactName": "rota3d-${version}-${os}-${arch}.${ext}"
+  }
+}
